@@ -1,4 +1,4 @@
-<Window x:Class="GlobalMP.Launcher.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="GlobalMP Launcher" Width="720" Height="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="#101019" Foreground="#F5F4FF">
+<Window x:Class="GlobalMP.Launcher.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="GlobalMP Launcher" Width="720" Height="510" ResizeMode="NoResize" WindowStartupLocation="CenterScreen" Background="#101019" Foreground="#F5F4FF">
 <Window.Resources>
   <Style TargetType="Button"><Setter Property="Background" Value="#7354DC"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="14,10"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Cursor" Value="Hand"/></Style>
   <Style TargetType="TextBox"><Setter Property="Background" Value="#202031"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="#39364D"/><Setter Property="Padding" Value="9"/></Style>
@@ -18,6 +18,7 @@
     <TextBlock Text="Development server (configuration only)" Margin="0,0,0,8"/>
     <TextBox Text="178.238.226.59:8365" IsReadOnly="True"/>
     <Button Content="LAUNCH ETS2" FontWeight="Bold" FontSize="16" Margin="0,20,0,0" Click="Launch_Click"/>
+    <Button Name="ConnectButton" Content="CONNECT TO GLOBALMP SERVER" Margin="0,10,0,0" Click="Connect_Click"/>
   </StackPanel>
   <Border Grid.Row="3" Background="#191925" CornerRadius="8" Margin="0,20,0,0" Padding="12"><TextBlock Name="StatusText" Text="Ready. Choose your ETS2 executable." Foreground="#CAC7D9" TextWrapping="Wrap"/></Border>
 </Grid>
