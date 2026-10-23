@@ -8,6 +8,9 @@ namespace GlobalMP.Launcher;
 
 public partial class MainWindow : Window
 {
+    private Process? _clientProcess;
+    private bool _serverConfirmed;
+
     private static readonly string SettingsFile = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "GlobalMP", "launcher.json");
@@ -66,6 +69,89 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             StatusText.Text = $"Launch failed: {ex.Message}";
+        }
+    }
+
+
+    private async void Connect_Click(object sender, RoutedEventArgs e)
+    {
+        if (_clientProcess is { HasExited: false })
+        {
+            _clientProcess.Kill();
+            ConnectButton.Content = "CONNECT TO GLOBALMP SERVER";
+            StatusText.Text = "Disconnected by launcher.";
+            return;
+        }
+
+        var exe = Path.Combine(AppContext.BaseDirectory, "globalmp-client.exe");
+        if (!File.Exists(exe))
+        {
+            StatusText.Text = "Missing globalmp-client.exe. Download the Windows client build from GitHub Actions and place it beside the launcher executable.";
+            return;
+        }
+
+        _serverConfirmed = false;
+        ConnectButton.IsEnabled = false;
+        StatusText.Text = "Connecting to GlobalMP server...";
+        try
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo(exe)
+                {
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true
+                },
+                EnableRaisingEvents = true
+            };
+            _clientProcess = process;
+            process.Start();
+            ConnectButton.Content = "DISCONNECT";
+            ConnectButton.IsEnabled = true;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (await process.StandardOutput.ReadLineAsync() is { } line)
+                    {
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                            if (!ReferenceEquals(_clientProcess, process)) return;
+                            if (line.StartsWith("JOIN_CONFIRMED"))
+                            {
+                                _serverConfirmed = true;
+                                StatusText.Text = "Connected and accepted by GlobalMP server. " + line;
+                            }
+                            else if (!_serverConfirmed || line.StartsWith("ERROR") || line == "DISCONNECTED")
+                                StatusText.Text = line;
+                        });
+                    }
+                    await process.WaitForExitAsync();
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!ReferenceEquals(_clientProcess, process)) return;
+                        ConnectButton.Content = "CONNECT TO GLOBALMP SERVER";
+                        ConnectButton.IsEnabled = true;
+                        if (_serverConfirmed)
+                            StatusText.Text = "GlobalMP connection closed.";
+                        else
+                            StatusText.Text = "Connection ended without server confirmation. Check VPS firewall and client build.";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Dispatcher.InvokeAsync(() => StatusText.Text = "Client error: " + ex.Message);
+                }
+                finally { process.Dispose(); }
+            });
+        }
+        catch (Exception ex)
+        {
+            ConnectButton.IsEnabled = true;
+            ConnectButton.Content = "CONNECT TO GLOBALMP SERVER";
+            StatusText.Text = "Unable to start networking client: " + ex.Message;
         }
     }
 
