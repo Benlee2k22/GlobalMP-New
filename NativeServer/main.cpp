@@ -28,10 +28,10 @@ int main(int argc, char** argv) {
     for(auto* p=peer->Receive();p;p=peer->Receive()) {
       const auto addr = std::string(p->systemAddress.ToString(true, ':'));
       if(p->data[0] == ID_NEW_INCOMING_CONNECTION) {
-        std::printf("PEER_CONNECTED %s\n",addr);
+        std::printf("PEER_CONNECTED %s\n",addr.c_str());
       } else if(p->data[0] == ID_CONNECTION_LOST || p->data[0] == ID_DISCONNECTION_NOTIFICATION) {
         players.erase(addr);
-        std::printf("PEER_LEFT %s\n",addr);
+        std::printf("PEER_LEFT %s\n",addr.c_str());
       } else if(p->data[0] == Manager && p->length >= 2) {
         RakNet::BitStream payload(p->data,p->length,false);
         payload.IgnoreBytes(2);
