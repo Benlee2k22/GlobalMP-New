@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
                 unsigned int sender = 0, seq = 0;
                 double x = 0, y = 0, z = 0;
                 if (data.Read(sender) && data.Read(seq) && data.Read(x) && data.Read(y) && data.Read(z)) {
-                    std::printf("REMOTE_POSITION player=%u seq=%u x=%.2f y=%.2f z=%.2f\\n",sender,seq,x,y,z);
+                    std::printf("REMOTE_POSITION player=%u seq=%u x=%.2f y=%.2f z=%.2f\n",sender,seq,x,y,z);
                     std::fflush(stdout);
                 }
             } else if (id == ID_CONNECTION_ATTEMPT_FAILED || id == ID_NO_FREE_INCOMING_CONNECTIONS || id == ID_CONNECTION_BANNED) {
