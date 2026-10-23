@@ -11,6 +11,7 @@
 static constexpr unsigned char PacketManagerId = ID_USER_PACKET_ENUM + 1;
 static constexpr unsigned char JoinId = 0;
 static constexpr unsigned char JoinReplyId = 1;
+static constexpr unsigned char PositionId = 3;
 
 static void log(const char* message) { std::puts(message); std::fflush(stdout); }
 
@@ -34,6 +35,9 @@ int main(int argc, char** argv) {
         RakNet::RakPeerInterface::DestroyInstance(peer); return 4;
     }
     bool joined = false;
+    unsigned int sequence = 0;
+    auto lastSend = std::chrono::steady_clock::now();
+    const double offset = argc > 4 ? std::atof(argv[4]) : 0.0;
     auto start = std::chrono::steady_clock::now();
     while (true) {
         for (RakNet::Packet* p = peer->Receive(); p; p = peer->Receive()) {
@@ -60,6 +64,16 @@ int main(int argc, char** argv) {
                     std::fflush(stdout);
                     joined = true;
                 }
+            } else if (id == PacketManagerId && p->length >= 2 && p->data[1] == PositionId) {
+                RakNet::BitStream data(p->data, p->length, false);
+                data.IgnoreBytes(2);
+                data.AlignReadToByteBoundary();
+                unsigned int sender = 0, seq = 0;
+                double x = 0, y = 0, z = 0;
+                if (data.Read(sender) && data.Read(seq) && data.Read(x) && data.Read(y) && data.Read(z)) {
+                    std::printf("REMOTE_POSITION player=%u seq=%u x=%.2f y=%.2f z=%.2f\\n",sender,seq,x,y,z);
+                    std::fflush(stdout);
+                }
             } else if (id == ID_CONNECTION_ATTEMPT_FAILED || id == ID_NO_FREE_INCOMING_CONNECTIONS || id == ID_CONNECTION_BANNED) {
                 log("ERROR: Connection rejected or timed out");
                 peer->DeallocatePacket(p);
@@ -76,6 +90,17 @@ int main(int argc, char** argv) {
                 return 6;
             }
             peer->DeallocatePacket(p);
+        }
+        if (joined && std::chrono::steady_clock::now() - lastSend > std::chrono::milliseconds(500)) {
+            lastSend = std::chrono::steady_clock::now();
+            RakNet::BitStream packet;
+            packet.Write(static_cast<RakNet::MessageID>(PacketManagerId));
+            packet.Write(static_cast<RakNet::MessageID>(PositionId));
+            packet.Write(++sequence);
+            packet.Write(offset + sequence * 0.1);
+            packet.Write(0.0);
+            packet.Write(offset);
+            peer->Send(&packet, MEDIUM_PRIORITY, UNRELIABLE_SEQUENCED, 1, RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
         }
         if (!joined && std::chrono::steady_clock::now() - start > std::chrono::seconds(15)) {
             log("ERROR: No join acknowledgement within 15 seconds");
