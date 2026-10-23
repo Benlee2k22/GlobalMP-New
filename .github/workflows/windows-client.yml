@@ -1,0 +1,24 @@
+name: Build Windows RakNet client
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'NativeClient/**'
+      - '.github/workflows/windows-client.yml'
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch original ETS2MP RakNet dependency
+        shell: pwsh
+        run: git clone --depth 1 https://github.com/MRBlueGame95/ETS2MP.git legacy
+      - name: Configure
+        shell: pwsh
+        run: cmake -S NativeClient -B native-build -A x64 -DETS2MP_SOURCE="$env:GITHUB_WORKSPACE/legacy"
+      - name: Build
+        run: cmake --build native-build --config Release --parallel 4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: globalmp-client-windows
+          path: native-build/Release/globalmp-client.exe
